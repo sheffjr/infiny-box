@@ -86,11 +86,22 @@ ENV LANG=en_US.UTF-8
 # a rootless container GitHub answers, but stalls ~45s before the first byte
 # (from WSL itself: 2.7s). A plain `curl -fsSL` times out and fails the build
 # even though the link is live and the file downloads in 47s.
+#
+# The architecture is derived rather than hardcoded. It was the single place in
+# this file naming x86_64 — everything else comes from apt, pip or Playwright,
+# all of which resolve their own architecture — so a build on arm64 produced an
+# image whose yazi was an amd64 binary that could not run. Nothing else stood in
+# the way of building for Apple Silicon.
 RUN set -eux; \
+    case "$(dpkg --print-architecture)" in \
+      amd64) YAZI_ARCH=x86_64 ;; \
+      arm64) YAZI_ARCH=aarch64 ;; \
+      *) echo "no yazi build for $(dpkg --print-architecture)" >&2; exit 1 ;; \
+    esac; \
     curl -fsSL -o /tmp/yazi.zip \
       --retry 5 --retry-delay 5 --retry-all-errors \
       --connect-timeout 30 --max-time 600 \
-      "https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.zip"; \
+      "https://github.com/sxyazi/yazi/releases/latest/download/yazi-${YAZI_ARCH}-unknown-linux-gnu.zip"; \
     unzip -q -j /tmp/yazi.zip '*/yazi' '*/ya' -d /usr/local/bin/; \
     chmod +x /usr/local/bin/yazi /usr/local/bin/ya; \
     rm -f /tmp/yazi.zip; \
