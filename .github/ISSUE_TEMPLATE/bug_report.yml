@@ -1,0 +1,76 @@
+name: Something broke
+description: The Box did not do what it said it would
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before anything else: if the agent gave a wrong or made-up **answer**,
+        that is usually the model, not the Box. Small local models do that. Say
+        which model you used and we will tell you which of the two it was.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got instead.
+      placeholder: |
+        I ran `infiny --setup`, picked Ollama, and the wizard said the tool
+        check failed with http_401 — but the same key had just listed my models.
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: Where
+      description: Windows + WSL2, or Docker on macOS/Linux. Include the version.
+      placeholder: Windows 11 26100, WSL2 / or Docker Desktop 4.56 on macOS 15.3
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Which model, and where it runs
+      description: >
+        The endpoint matters as much as the model. Local Ollama and a cloud API
+        take different paths through the code.
+      placeholder: qwen3.5:9b on local Ollama / mistral-small-latest on api.mistral.ai
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Output of the acceptance suite
+      description: |
+        `bash /opt/infiny/test-box.sh` inside the Box. This one command answers
+        most of what we would otherwise ask you, and it distinguishes "the
+        product is broken" from "the model is having a bad day".
+
+        Skip it if the Box does not start at all — say so instead.
+      render: text
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, if the gateway or search is involved
+      description: |
+        `/tmp/hermes-gateway.log`, `/tmp/searxng.log`, or
+        `journalctl -u infiny-gateway -n 50` on WSL.
+
+        Please check for your API key before pasting.
+      render: text
+
+  - type: checkboxes
+    id: known
+    attributes:
+      label: Not this, I hope
+      options:
+        - label: >
+            My local model server listens on 0.0.0.0, not only 127.0.0.1
+            (a loopback-only server is unreachable from the sandbox by design)
+        - label: >
+            The behaviour survives asking twice — small models answer
+            inconsistently, and one bad reply is usually just that

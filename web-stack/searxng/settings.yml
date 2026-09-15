@@ -1,0 +1,49 @@
+# Infiny SearXNG — the minimum configuration for agent access
+use_default_settings: true
+
+server:
+  # Address and port are explicit: everything reaches SearXNG at 127.0.0.1:8888
+  # by fixed address, and relying on the SearXNG default (which has changed
+  # between versions) means one day getting silently broken search.
+  bind_address: "127.0.0.1"
+  port: 8888
+  secret_key: "infiny-change-me-in-production"
+  limiter: false
+  image_proxy: false
+
+search:
+  # CRITICAL: enable the JSON format, or the agent gets no structure back
+  formats:
+    - html
+    - json
+
+outgoing:
+  # The SearXNG default is 3 seconds per engine. That suits a public instance
+  # with thousands of users, where dropping a slow engine quickly beats making
+  # everyone wait. We have one user and a handful of queries, so the trade runs
+  # the other way: waiting costs nothing, an empty result set costs a lot.
+  #
+  # Measured 2026-09-02: of the four general-purpose engines, only brave and
+  # google cse answered a single query; duckduckgo, startpage and wikipedia all
+  # timed out. The base is narrow already — losing half of it to three seconds
+  # makes no sense.
+  request_timeout: 8.0
+  max_request_timeout: 15.0
+
+engines:
+  # IMPORTANT: use_default_settings above means SearXNG's ENTIRE default engine
+  # set is active, and this block merely un-disables three of them. About 83
+  # engines are enabled in practice, but only ten are in the general category,
+  # and only four of those are actual web search: brave, duckduckgo, google cse,
+  # startpage. The other six are dictionaries, translators and wikidata. Hence
+  # the fragility: when brave goes into "Suspended: too many requests", one or
+  # two of the four remain, and any hiccup there empties the results.
+  - name: wikipedia
+    disabled: false
+    timeout: 8.0
+  - name: duckduckgo
+    disabled: false
+    timeout: 8.0
+  - name: brave
+    disabled: false
+    timeout: 8.0

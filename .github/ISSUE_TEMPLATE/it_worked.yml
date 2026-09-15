@@ -1,0 +1,60 @@
+name: It worked (or partly did)
+description: A report from hardware or an OS we have never touched
+labels: [report]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the most valuable thing you can send, and the reason it has its
+        own template.
+
+        The Box has been built and tested by one person on one machine. macOS
+        has never been run at all. Neither has an AMD GPU, a non-Latin Windows
+        install, or a machine where WSL had to be enabled from scratch. Every
+        claim in the README rests on a sample of one until someone else checks.
+
+  - type: input
+    id: platform
+    attributes:
+      label: What you ran it on
+      placeholder: MacBook Pro M3, macOS 15.3, Docker Desktop 4.56
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Which model
+      placeholder: qwen3.5:9b via Ollama, 32 GB unified memory
+    validations:
+      required: true
+
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: How far did it get
+      options:
+        - Installed, connected a model, the agent answered
+        - Installed, but connecting a model failed
+        - Did not install
+        - Everything worked and it did real work for me
+    validations:
+      required: true
+
+  - type: textarea
+    id: detail
+    attributes:
+      label: What actually happened
+      description: >
+        Rough notes are fine. What surprised you is more useful than what went
+        to plan — and if something in the README turned out to be wrong on your
+        machine, that is exactly what we want to hear.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance suite, if you got that far
+      description: "`bash /opt/infiny/test-box.sh` inside the Box."
+      render: text

@@ -1,0 +1,31 @@
+[Unit]
+# Search, inside the Box. It lives here rather than in a separate container:
+# compose inside a container would mean docker-in-docker or mounting the host
+# socket — a hole in the very sandbox the Box exists to provide.
+Description=Infiny — SearXNG (search inside the Box)
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+# WorkingDirectory=/ matters. The shortcut launches the Box from Windows, and
+# WSL sets the working directory to /mnt/c/... or /mnt/d/..., while Python mixes
+# cwd into sys.path. On an unreachable path (non-ASCII names, a dropped mount, a
+# network drive) SearXNG dies at import with
+# `OSError: [Errno 5] Input/output error: '/mnt/d/'`, and the Box simply has no
+# search — without a single intelligible message.
+# Caught live 2026-08-24.
+WorkingDirectory=/
+# PYTHONPATH is mandatory: SearXNG is not installed into site-packages, only its
+# dependencies were (its editable install breaks on a chicken-and-egg with
+# msgspec), so we run it from source.
+Environment=SEARXNG_SETTINGS_PATH=/etc/searxng/settings.yml
+Environment=PYTHONPATH=/opt/searxng
+ExecStart=/opt/infiny/venv/bin/python -m searx.webapp
+Restart=always
+RestartSec=3
+StandardOutput=append:/tmp/searxng.log
+StandardError=append:/tmp/searxng.log
+
+[Install]
+WantedBy=multi-user.target

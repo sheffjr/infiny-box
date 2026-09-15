@@ -1,0 +1,22 @@
+# Blank issues stay enabled. Not everything fits a form, and a template that
+# turns someone away costs more than a badly formatted issue.
+blank_issues_enabled: true
+contact_links:
+  - name: The agent gave a wrong answer
+    url: https://github.com/sheffjr/infiny-box/blob/main/README.md#what-a-local-model-will-and-wont-do
+    about: >
+      Usually the model rather than the Box. Small local models make things up,
+      stop halfway, and answer inconsistently. Read this first — then open an
+      issue if it still looks like ours.
+  - name: Something about the agent itself
+    url: https://github.com/NousResearch/hermes-agent
+    about: >
+      The reasoning, tool calling and approvals are Hermes Agent by Nous
+      Research. Infiny Box is not a fork of it — bugs in how the agent thinks
+      usually belong upstream.
+  - name: Something about search
+    url: https://github.com/searxng/searxng
+    about: >
+      Search is SearXNG, unmodified. If an engine returns nothing or rate-limits
+      you, that is upstream. If search is missing from the tool list entirely,
+      that is us — open an issue here.

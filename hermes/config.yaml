@@ -1,0 +1,234 @@
+# Infiny OS — Hermes Agent configuration
+# Hermes is the BRAIN of Infiny. It provides memory, skills, tool-calling,
+# self-improvement and an OpenAI-compatible endpoint the UI talks to.
+#
+# This file is installed to ~/.hermes/config.yaml (user 'user') at build time.
+# Secrets (API keys for cloud fallback) go in ~/.hermes/.env, never here.
+
+# ── Model provider ─────────────────────────────────────────────────────────────
+# DELIBERATELY EMPTY. Phase 1 ships no model; the user attaches their own with
+# `infiny --setup`. The wizard writes default, base_url and api_key here.
+# provider: "custom" — the ollama/vllm/llamacpp aliases all map onto it anyway.
+#
+# This used to hold the development machine's real LAN address, and it shipped
+# inside the image: on first run the user saw "Currently connected: qwen3.5:4b"
+# pointing at somebody else's machine and concluded everything was already set
+# up. Nothing of ours belongs here.
+#
+# Which model to suggest is in README.
+# qwen3-vl:4b is not recommended: the only model we tested that leaked its
+# system prompt to an injection, and 25x slower to first token.
+model:
+  provider: "custom"
+
+# ── Agent ──────────────────────────────────────────────────────────────────────
+# reasoning_effort was the most expensive mistake of Phase 1. It said "none",
+# because thinking had once produced loops on a weak model. The price was the
+# agent's ability to act at all: on 2026-08-22 a run of four agentic tasks
+# across two models showed that "none" breaks BOTH, differently and invisibly:
+#   qwen3.5:9b  — writes out a plan and ENDS its turn, having done nothing;
+#   gemma4:12b  — emits the tool call as `call:skill_view(...)`, while Ollama's
+#                 gemma4 parser expects JSON, so the call is unreadable and the
+#                 answer comes back empty.
+# With "low", qwen completed a self-extension for the first time (found,
+# installed qrencode, generated a file, verified it), and gemma's parse errors
+# disappeared entirely.
+#
+# Hermes levels: none|minimal|low|medium|high|xhigh|max|ultra (empty = the
+# provider default). Changeable at runtime: `/reasoning <level>` in the CLI
+# writes here and restarts the gateway. Above low is not always sensible on
+# small models: latency grows, and on a 4b the loop risk returns.
+agent:
+  reasoning_effort: "low"
+
+# ── Server / gateway ───────────────────────────────────────────────────────────
+# The CLI talks to the Hermes gateway (`hermes gateway run`) on :8642 with
+# Bearer auth. The port and whether the gateway runs at all are set through
+# ~/.hermes/.env:
+#   API_SERVER_ENABLED=true
+#   API_SERVER_KEY=<secret>   <- the key cli.py authenticates with
+# The key is NOT stored here (secrets live in .env only).
+
+# ── Memory (holographic, built-in) ─────────────────────────────────────────────
+# MEMORY.md + USER.md injected into prompt; FTS5 session search; background review.
+memory:
+  provider: builtin
+  capture: true             # automatically learn durable facts
+  nudge_interval: 8         # background memory review every N turns
+
+# ── Skills (procedural memory + OS capabilities) ───────────────────────────────
+# Infiny's OS skills live in ~/.hermes/skills/. They are the distro's added value:
+# Hyprland control, package management, network, self-healing, super-context.
+skills:
+  enabled: true
+  auto_create: true         # let Hermes distill repeated tasks into new skills
+
+  # Curated skill set. The vanilla Hermes catalog ships ~83 skills (Suno,
+  # TouchDesigner, Polymarket, Notion, Airtable, ...) that are irrelevant to an
+  # AI-first Linux OS. Left enabled they (a) burn ~2.6k tokens of every system
+  # prompt and (b) drown Infiny's own skills, so a small local model picks the
+  # wrong one or none at all. Re-enable any of these by deleting its line.
+  # computer-use is disabled because it duplicates our desktop-control skill.
+  disabled:
+    - computer-use
+    - airtable
+    - architecture-diagram
+    - arxiv
+    - ascii-art
+    - ascii-video
+    - audiocraft-audio-generation
+    - baoyu-infographic
+    - blogwatcher
+    - claude-code
+    - claude-design
+    - codebase-inspection
+    - codex
+    - comfyui
+    - design-md
+    - dogfood
+    - evaluating-llms-harness
+    - excalidraw
+    - gif-search
+    - github-auth
+    - github-code-review
+    - github-issues
+    - github-pr-workflow
+    - github-repo-management
+    - google-workspace
+    - heartmula
+    - hermes-agent-skill-authoring
+    - hermes-desktop-plugins
+    - hermes-themes
+    - huggingface-hub
+    - humanizer
+    - jupyter-live-kernel
+    - llama-cpp
+    - llm-wiki
+    - manim-video
+    - maps
+    - nano-pdf
+    - node-inspect-debugger
+    - notion
+    - obsidian
+    - opencode
+    - openhue
+    - p5js
+    - petdex
+    - polymarket
+    - popular-web-designs
+    - powerpoint
+    - pretext
+    - python-debugpy
+    - requesting-code-review
+    - research-paper-writing
+    - segment-anything-model
+    - serving-llms-vllm
+    - simplify-code
+    - sketch
+    - songsee
+    - songwriting-and-ai-music
+    - spike
+    - teams-meeting-pipeline
+    - test-driven-development
+    - touchdesigner-mcp
+    - tui-widgets
+    - weights-and-biases
+    - xurl
+    - youtube-content
+    - yuanbao
+
+# ── Tools ──────────────────────────────────────────────────────────────────────
+# Blank-slate baseline + what Infiny needs. Terminal + File do most OS work
+# (per Hermes philosophy: prefer skills/terminal over new core tools).
+# Structured vision + cursor control come from the infiny MCP server below.
+tools:
+  terminal:
+    enabled: true
+    backend: local          # run commands directly on the host OS
+  file:
+    enabled: true
+  web:
+    enabled: true           # SearXNG/Firecrawl can be wired later
+  vision:
+    enabled: true
+  memory:
+    enabled: true
+
+# ── Web: search and page reading ──────────────────────────────────────────────
+# Split by capability on purpose:
+#   search  -> searxng       — our SearXNG inside the container, no keys;
+#   extract -> infiny-render — our Playwright/Chromium, also inside.
+#
+# Why not an MCP server, as it used to be. It was called `web`, and Hermes HAS a
+# built-in toolset by that name. The tools registered
+# (mcp__web__web_search), but the platform resolver answered the name `web` with
+# the built-in toolset, which is dead without a provider — the check_fn gate cut
+# it silently. The result: 14 of 33 tools reached the model, and search was not
+# among them AT ALL. The symptom, "the agent lies about search", lasted two
+# weeks. Diagnosed 2026-08-13.
+#
+# SEARXNG_URL lives in ~/.hermes/.env (written by ensure_gateway_env() and
+# wsl/infiny-start.sh) rather than here: without it the built-in search goes
+# invisible again, so it travels the same path as API_SERVER_KEY.
+plugins:
+  enabled:
+    - web/infiny-render     # ~/.hermes/plugins/web/infiny-render — opt-in by Hermes design
+
+web:
+  search_backend: searxng
+  extract_backend: infiny-render
+
+# The Box has no MCP servers. The infiny server (vision and cursor) belongs to
+# Infiny OS: it exposes see_screen and capture_screenshot, and the Box has no
+# display, no grim and no ydotool. That is worse than a plain breakage: SOUL.md
+# tells the model "you have no vision" while the tool list would say otherwise —
+# and the model believes the list, not the prompt. Observed live 2026-08-02.
+
+# ── Self-improvement ───────────────────────────────────────────────────────────
+self_improvement:
+  enabled: true
+
+# ── Approvals ───────────────────────────────────────────────────────────────────
+# manual (default): only commands matching Hermes' dangerous-pattern list need
+# your approval (rm -rf, DROP TABLE, git reset --hard, dd, mkfs, etc). Read-only
+# commands — free, date, lscpu, df, uname, hostname, lspci — run WITHOUT asking.
+# This is exactly what makes "what's my system / how much RAM / what time is it"
+# work with zero friction: they are not on the dangerous list.
+approvals:
+  mode: manual
+  timeout: 60
+  # Extra safety net specific to Infiny being a full OS agent (not just a dev
+  # tool) — these are blocked even under --yolo, on top of Hermes' own hardline
+  # blocklist (fork bombs, filesystem wipes, direct block-device writes).
+  deny:
+    - "mkfs*"
+    - "dd if=* of=/dev/sd*"
+    - "dd if=* of=/dev/nvme*"
+    - "* > /dev/sd*"
+    - "shred*/dev/*"
+    - "*:(){ :|:& };:*"        # fork bomb variants beyond the built-in blocklist
+
+# ── Security ───────────────────────────────────────────────────────────────────
+# tirith is Hermes' pre-exec scanner (the binary sits in ~/.hermes/bin/tirith
+# and enables itself when found). It is disabled here DELIBERATELY, and here is
+# why.
+#
+# One of its rules is "Confusable Unicode characters": Cyrillic or Greek next to
+# ASCII is treated as an attempted homoglyph attack. For anyone working in a
+# non-Latin language that fires on practically EVERY command — `echo "Готово"`
+# or a file with a Russian name is enough. Observed live 2026-08-22: the request
+# "create a directory and a file with some text" ran straight into [HIGH]
+# Confusable Unicode. The Box supports Russian as a first-class interface
+# language (see core/i18n.py), and a rule that conflicts with the language of
+# the product cannot stay in it.
+#
+# This does NOT loosen dangerous commands: the whole approvals mechanism above
+# remains — Hermes' own detector plus our deny list, which is stricter than
+# tirith. If you want the scanner (an English-only setup, say), set this true.
+security:
+  tirith_enabled: false
+
+# ── Soul (identity) ────────────────────────────────────────────────────────────
+# The system prompt / persona. Full text in SOUL.md alongside this file.
+soul:
+  file: "SOUL.md"

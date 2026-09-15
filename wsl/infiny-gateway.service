@@ -1,0 +1,43 @@
+[Unit]
+# The Box's brain: the Hermes OpenAI-compatible API on :8642, which the CLI
+# talks to.
+#
+# Why a unit rather than `nohup` from the startup script. On 2026-08-24 the
+# agent, asked to "stop search and bring it back", killed the service, failed
+# to restore it, and then reported that it had. While the services hung off
+# nohup, any such mistake meant a dead Box until a human intervened. Under a
+# supervisor, "killed it" becomes "alive again in three seconds", and the cost
+# of an agent error drops to nothing. It also makes the self-healing skill
+# truthful: that skill recommends `systemctl`, and before these units existed
+# the advice was a lie.
+Description=Infiny — Hermes gateway (the Box's brain)
+After=network.target
+# Restart rate limiting is disabled on purpose: the entire point of this unit
+# is that the service comes back ALWAYS. With the default limit (5 starts in
+# 10s) an agent that poked the service a few times in a row would leave the Box
+# with no brain.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+# The working directory must be HERMES_HOME: the gateway reads .env relative to
+# it, and without that the Bearer key comes out empty and the CLI gets 401.
+WorkingDirectory=/root/.hermes
+# systemd does not inherit a login shell's environment: without these lines the
+# service has neither $HOME nor $HERMES_HOME, and Hermes would go looking for
+# its directory in the wrong place.
+Environment=HOME=/root
+Environment=HERMES_HOME=/root/.hermes
+# .env with API_SERVER_ENABLED and API_SERVER_KEY has to exist BEFORE start:
+# without it there is no API server at all, while the port still listens.
+ExecStartPre=/usr/local/bin/infiny-ensure-env
+# --replace: Hermes keeps its own instance lock, and it survives the process
+# being killed. Without the flag a restart refuses to start even on a free port.
+ExecStart=/usr/local/bin/hermes gateway run --replace
+Restart=always
+RestartSec=3
+StandardOutput=append:/tmp/hermes-gateway.log
+StandardError=append:/tmp/hermes-gateway.log
+
+[Install]
+WantedBy=multi-user.target

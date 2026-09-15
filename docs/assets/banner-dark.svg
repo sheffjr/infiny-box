@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 340" width="1280" height="340" role="img" aria-labelledby="t d">
+<title id="t">Infiny Box</title><desc id="d">An AI terminal with a computer of its own. Its own Linux, its own root, its own web search. No model inside -- you bring your own.</desc>
+<style>
+  text { font-family: ui-monospace,"Cascadia Mono","SFMono-Regular","Menlo",Consolas,"DejaVu Sans Mono",monospace; }
+  .fg { fill: #ECF2F8; } .tx { fill: #C9D1D9; }
+  .mu { fill: #768390; } .dm { fill: #545D68; }
+  .ac { fill: #4FC3F7; } .bl { fill: #539BF5; }
+  .gr { fill: #57AB5A; } .rd { fill: #F47067; }
+  .b { font-weight: 700; }
+</style>
+<rect x="0" y="0" width="1280" height="340" rx="12" fill="#0E1116" stroke="#30363D" stroke-width="2"/>
+<path d="M12 0 H1268 A12 12 0 0 1 1280 12 V46 H0 V12 A12 12 0 0 1 12 0 Z" fill="#161B22"/>
+<line x1="0" y1="46" x2="1280" y2="46" stroke="#30363D" stroke-width="2"/>
+<circle cx="28" cy="23" r="6" fill="#F47067"/>
+<circle cx="50" cy="23" r="6" fill="#C69026"/>
+<circle cx="72" cy="23" r="6" fill="#57AB5A"/>
+<text x="110" y="28" class="dm" font-size="14">root@infiny: ~</text>
+<rect x="84" y="106" width="11" height="56" fill="#4FC3F7"/>
+<text x="112" y="152" class="fg b" font-size="60" letter-spacing="5">INFINY BOX</text>
+<text x="112" y="197" class="tx" font-size="22">An AI terminal with a computer of its own.</text>
+<text x="112" y="227" class="mu" font-size="16">Its own Linux. Its own root. Its own web search.</text>
+<rect x="84" y="256" width="452" height="44" rx="7" fill="#161B22" stroke="#30363D"/>
+<text x="102" y="284" font-size="16"><tspan class="gr b">$</tspan><tspan class="tx" xml:space="preserve">  wsl --install --from-file infiny.wsl</tspan></text>
+<rect x="758" y="261" width="187" height="34" rx="17" fill="none" stroke="#30363D" stroke-width="1.5"/>
+<text x="851" y="283" font-size="13" fill="#539BF5" text-anchor="middle">bring your own model</text>
+<rect x="956" y="261" width="147" height="34" rx="17" fill="none" stroke="#30363D" stroke-width="1.5"/>
+<text x="1030" y="283" font-size="13" fill="#768390" text-anchor="middle">nothing mounted</text>
+<rect x="1116" y="261" width="108" height="34" rx="17" fill="none" stroke="#30363D" stroke-width="1.5"/>
+<text x="1170" y="283" font-size="13" fill="#768390" text-anchor="middle">Apache-2.0</text>
+</svg>

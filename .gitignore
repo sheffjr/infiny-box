@@ -1,0 +1,43 @@
+# Infiny OS lives in its own repository. The Box and the OS are different
+# products with different promises — the Box is a container with no screen,
+# the OS is a system with a desktop. Keeping both here would ship people code
+# that cannot work in the Box and was never meant to.
+
+# Benchmark harness and its raw data. Research tooling, not product: it never
+# enters the image and nobody who downloads the Box needs it.
+scripts/
+bin/
+
+# Internal working documents: decision history, machine-specific details,
+# the Phase 2 build guide. Readers need README, not these.
+CONTEXT.md
+GUIDE.md
+PHASE1.md
+
+# Environment and build artifacts
+venv/
+__pycache__/
+*.pyc
+infiny.wsl
+infiny-rootfs.tar
+infiny.raw
+infiny.qcow2
+
+# Local state
+.claude/
+*.log
+
+# Secrets. None belong here in the first place; these rules exist for the
+# "put it there for a minute and forgot" case, which is the case that happens.
+key.txt
+pass.txt
+*.key
+*.pem
+.env
+.env.*
+secrets.*
+
+# Release archives. Half a gigabyte in history makes a repository nobody
+# clones — these belong in GitHub Releases, attached to a tag.
+dist/
+*.zip

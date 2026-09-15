@@ -1,0 +1,33 @@
+# Line endings — LF everywhere, no exceptions.
+#
+# This is not a style preference. Development happens on Windows while all the
+# code runs on Linux: shell scripts, the Dockerfile, WSL configs. Git converts
+# to CRLF in the working copy on Windows by default, and then `#!/bin/bash\r`
+# on Linux produces "bad interpreter: No such file or directory" — the script
+# does not run at all, and the error message gives no hint that a line ending
+# is to blame.
+#
+# Anyone who cloned this repository on Windows and built the image would hit it:
+# the build succeeds, the Box does not work.
+* text=auto eol=lf
+
+# Windows scripts are the EXCEPTION — they need CRLF.
+# cmd.exe misbehaves unpredictably on LF-only files: multi-line `if (...)`
+# blocks and `goto` labels get parsed wrongly. PowerShell is more forgiving, but
+# we keep it uniform rather than guess.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# .ps1 must stay UTF-8 WITH BOM. Windows PowerShell 5.1 reads a BOM-less file as
+# ANSI: non-ASCII characters fall apart, the parser dies, and the installer
+# window closes instantly without a single message. That is exactly what
+# happened on 2026-08-02. Git does not touch the BOM — this note is a warning,
+# not a rule.
+
+# Leave binaries alone.
+*.png  binary
+*.ico  binary
+*.gguf binary
+*.wsl  binary
+*.zip  binary

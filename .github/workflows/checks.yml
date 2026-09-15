@@ -1,0 +1,121 @@
+name: checks
+
+# Fast checks — under a minute. They run on every push and pull request, which
+# the image build deliberately does not: that takes half an hour, and feedback
+# nobody waits for is feedback nobody reads.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Python syntax
+        run: python -m compileall -q core infiny_cli cli.py hermes/plugins
+
+      - name: Shell syntax
+        run: |
+          fail=0
+          for f in $(git ls-files '*.sh'); do
+            bash -n "$f" || { echo "::error file=$f::bash -n failed"; fail=1; }
+          done
+          exit $fail
+
+      - name: YAML parses
+        run: |
+          python - <<'PY'
+          import glob, sys, yaml
+          bad = 0
+          for f in ["hermes/config.yaml", "web-stack/searxng/settings.yml",
+                    *glob.glob("hermes/plugins/**/*.yaml", recursive=True),
+                    *glob.glob(".github/workflows/*.yml")]:
+              try:
+                  yaml.safe_load(open(f, encoding="utf-8"))
+              except Exception as e:
+                  print(f"::error file={f}::{e}"); bad = 1
+          sys.exit(bad)
+          PY
+
+      - name: Translations are complete
+        # The interface is bilingual, and a missing key does not fail loudly —
+        # t() falls back to returning the key itself, so the user sees
+        # "setup_connected" instead of a sentence. Cheap to check, invisible
+        # otherwise.
+        run: |
+          python - <<'PY'
+          import re, sys
+          from pathlib import Path
+          sys.path.insert(0, ".")
+          from core.i18n import STRINGS, LANGS
+
+          bad = 0
+          for key, entry in STRINGS.items():
+              for lang in LANGS:
+                  if not entry.get(lang):
+                      print(f"::error::i18n key '{key}' has no '{lang}' translation")
+                      bad = 1
+              # Placeholders must match across languages: t() does .format(**kw)
+              # with no guard, so a stray {name} in one language is a KeyError
+              # for that user only.
+              ph = {lang: set(re.findall(r"\{(\w+)", entry.get(lang, ""))) for lang in LANGS}
+              if len(set(map(frozenset, ph.values()))) > 1:
+                  print(f"::error::i18n key '{key}' has mismatched placeholders: {ph}")
+                  bad = 1
+
+          # Collected from the AST rather than by regex. A text search cannot
+          # tell a call from a comment, and this file contains a comment that
+          # mentions _("key") as an example — which a regex dutifully reported
+          # as a missing translation.
+          import ast
+          used = set()
+          for p in list(Path("core").rglob("*.py")) + list(Path("infiny_cli").rglob("*.py")):
+              tree = ast.parse(p.read_text(encoding="utf-8"))
+              for node in ast.walk(tree):
+                  if not isinstance(node, ast.Call) or not node.args:
+                      continue
+                  fn = node.func
+                  name = fn.id if isinstance(fn, ast.Name) else None
+                  if name not in ("_", "_t", "_yes"):
+                      continue
+                  first = node.args[0]
+                  if isinstance(first, ast.Constant) and isinstance(first.value, str):
+                      used.add(first.value)
+          missing = sorted(used - set(STRINGS))
+          if missing:
+              print(f"::error::keys used in code but absent from STRINGS: {missing}")
+              bad = 1
+          print(f"{len(STRINGS)} keys, {len(used)} used in code")
+          sys.exit(bad)
+          PY
+
+      - name: No secrets committed
+        # A blunt net rather than a clever one. The point is to catch the
+        # "put a key there for a minute and forgot" case, which is the case
+        # that actually happens.
+        # The pathspec belongs to git ls-files, not to grep: after the pipe it
+        # was reaching grep as a filename, so the exclusion never applied and
+        # every run logged a "No such file or directory".
+        #
+        # And the result is collected rather than tested through xargs' exit
+        # code. xargs returns 123 when ANY invocation exits non-zero, so a batch
+        # that matched a real key and a batch that matched nothing produce the
+        # same 123 — a committed credential would have passed silently.
+        run: |
+          hits=$(git ls-files -z -- ':!*i18n*' | xargs -0 grep -nEI \
+                   '(sk-[A-Za-z0-9_-]{20,}|gsk_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----)' \
+                 || true)
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            echo "::error::something that looks like a credential is committed"
+            exit 1
+          fi
+          echo "clean"

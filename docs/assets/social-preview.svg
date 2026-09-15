@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-labelledby="t d">
+<title id="t">Infiny Box</title><desc id="d">An AI terminal with a computer of its own. Bring your own model.</desc>
+<style>
+  text { font-family: ui-monospace,"Cascadia Mono","SFMono-Regular","Menlo",Consolas,"DejaVu Sans Mono",monospace; }
+  .fg { fill: #ECF2F8; } .tx { fill: #C9D1D9; }
+  .mu { fill: #768390; } .dm { fill: #545D68; }
+  .ac { fill: #4FC3F7; } .bl { fill: #539BF5; }
+  .gr { fill: #57AB5A; } .rd { fill: #F47067; }
+  .b { font-weight: 700; }
+</style>
+<rect x="0" y="0" width="1280" height="640" fill="#0E1116"/>
+<rect x="0" y="0" width="1280" height="60" fill="#161B22"/>
+<line x1="0" y1="60" x2="1280" y2="60" stroke="#30363D" stroke-width="2"/>
+<circle cx="40" cy="30" r="8" fill="#F47067"/>
+<circle cx="68" cy="30" r="8" fill="#C69026"/>
+<circle cx="96" cy="30" r="8" fill="#57AB5A"/>
+<text x="146" y="37" class="dm" font-size="18">root@infiny: ~</text>
+<rect x="90" y="218" width="16" height="86" fill="#4FC3F7"/>
+<text x="132" y="292" class="fg b" font-size="92" letter-spacing="6">INFINY BOX</text>
+<text x="132" y="360" class="tx" font-size="34">An AI terminal with a computer of its own.</text>
+<text x="132" y="406" class="mu" font-size="24">Its own Linux. Its own root. Its own web search.</text>
+<line x1="90" y1="486" x2="1190" y2="486" stroke="#30363D"/>
+<text x="132" y="534" font-size="22"><tspan class="bl b">No model inside.</tspan><tspan class="mu" xml:space="preserve">  You bring your own.</tspan></text>
+<text x="132" y="574" class="dm" font-size="20">Ollama · LM Studio · llama.cpp · vLLM · or any cloud API</text>
+</svg>

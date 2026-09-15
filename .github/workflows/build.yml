@@ -1,0 +1,72 @@
+name: build image
+
+# Builds the Docker target from scratch and proves the result is not empty.
+#
+# This exists for one reason above all others: we ask people to download a
+# 500 MB image and run it as root. "Trust me" is not an answer to that. A build
+# that anyone can inspect, running from the same Dockerfile in a clean
+# environment, is.
+#
+# Not on every push — the build takes roughly half an hour, clones SearXNG and
+# downloads a Chromium. Fast feedback lives in checks.yml.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+  schedule:
+    # Weekly, so that upstream drift surfaces on a Monday rather than on the
+    # day we cut a release. Both SearXNG and Hermes are pinned, so a failure
+    # here means something outside those pins moved: a Debian package, a
+    # Playwright download, a base image.
+    - cron: "0 6 * * 1"
+
+jobs:
+  container:
+    runs-on: ubuntu-latest
+    # 90, not 60. The same build takes about half an hour on a developer
+    # machine, and a hosted runner is slower: clones SearXNG, downloads a
+    # Chromium and compiles lxml from source. A timeout that trips on a healthy
+    # build is a red badge that means nothing, and a badge nobody trusts is
+    # worse than no badge.
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show what is pinned
+        # Printed into the log on purpose: anyone auditing a released image can
+        # compare these against NOTICE.md without cloning anything.
+        run: |
+          grep -E '^ARG (SEARXNG_COMMIT|HERMES_VERSION)=' Dockerfile
+
+      - name: Build
+        run: docker build --target container -t infiny:ci .
+
+      - name: The image actually works
+        # Building is not the claim. The claim is that the thing inside runs, so
+        # we ask the container to prove it: the brain answers --version, the
+        # search engine is present, and the page-reading plugin loads into
+        # Hermes rather than merely existing on disk.
+        #
+        # The plugin check goes through a file rather than an inline -c string:
+        # nesting Python quotes inside sh inside YAML is how you get a workflow
+        # that fails to parse, which is a failure nobody sees.
+        run: |
+          docker run --rm infiny:ci hermes --version
+          docker run --rm infiny:ci test -f /opt/searxng/INFINY_PINNED_COMMIT
+
+          cat > /tmp/plugin_check.py <<'PYEOF'
+          from hermes_cli.plugins import discover_plugins
+          discover_plugins(force=True)
+          from agent.web_search_registry import get_provider
+          p = get_provider("infiny-render")
+          assert p is not None, "infiny-render did not load"
+          assert p.supports_extract(), "infiny-render does not advertise extract"
+          print("page reader present:", p.display_name)
+          PYEOF
+
+          docker run --rm -v /tmp/plugin_check.py:/tmp/check.py:ro \
+            -w /root/.hermes infiny:ci /opt/hermes-venv/bin/python /tmp/check.py
+
+      - name: Report size
+        run: |
+          docker images infiny:ci --format 'image size: {{.Size}}'

@@ -1,0 +1,40 @@
+{
+  "profiles": [
+    {
+      "antialiasingMode": "grayscale",
+      "colorScheme": "Infiny",
+      "font": {
+        "face": "Cascadia Mono",
+        "size": 11
+      },
+      "padding": "12",
+      "useAcrylic": false,
+      "scrollbarState": "hidden"
+    }
+  ],
+  "schemes": [
+    {
+      "name": "Infiny",
+      "background": "#0E1116",
+      "foreground": "#C9D1D9",
+      "cursorColor": "#4FC3F7",
+      "selectionBackground": "#264F78",
+      "black": "#0E1116",
+      "red": "#F47067",
+      "green": "#57AB5A",
+      "yellow": "#C69026",
+      "blue": "#539BF5",
+      "purple": "#B083F0",
+      "cyan": "#39C5CF",
+      "white": "#C9D1D9",
+      "brightBlack": "#545D68",
+      "brightRed": "#FF938A",
+      "brightGreen": "#6BC46D",
+      "brightYellow": "#DAAA3F",
+      "brightBlue": "#6CB6FF",
+      "brightPurple": "#DCBDFB",
+      "brightCyan": "#56D4DD",
+      "brightWhite": "#ECF2F8"
+    }
+  ]
+}

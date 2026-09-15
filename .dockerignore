@@ -1,0 +1,29 @@
+# What must NOT enter the build context.
+#
+# Without this file the build engine dutifully copies the whole directory, which
+# holds two finished artifacts of about 500 MB each (infiny.wsl and
+# installer/infiny.wsl), a 213 MB venv and .git. Over a 9p mount that is minutes
+# of waiting before the first line of the Dockerfile even runs.
+#
+# The rule is simple: only what a COPY names ends up in the image.
+
+*.wsl
+*.tar
+*.tar.gz
+venv/
+bin/
+scripts/
+old/
+.git/
+.github/
+__pycache__/
+**/__pycache__/
+*.pyc
+.claude/
+installer/
+web-stack/searxng/settings.yml.bak
+
+# Developer documentation — only README.md and NOTICE.md go into the image
+CONTEXT.md
+GUIDE.md
+PHASE1.md
