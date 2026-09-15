@@ -19,6 +19,15 @@ jobs:
         with:
           python-version: "3.13"
 
+      # The runner's Python is bare, and the YAML step imports yaml. Without
+      # this the whole workflow died on "No module named 'yaml'" — a check that
+      # cannot run is not a check, and it went red on the first push after
+      # release. It was missed because the step was verified locally by running
+      # the same code somewhere that already had PyYAML, which proved the files
+      # parse and proved nothing about the workflow.
+      - name: Install what the checks need
+        run: python -m pip install --quiet pyyaml
+
       - name: Python syntax
         run: python -m compileall -q core infiny_cli cli.py hermes/plugins
 
